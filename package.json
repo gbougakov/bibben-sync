@@ -6,11 +6,16 @@
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
-		"test": "vitest",
+		"test": "vitest run",
 		"cf-typegen": "wrangler types"
+	},
+	"dependencies": {
+		"pg": "^8.13.1",
+		"postal-mime": "^2.4.1"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"@types/pg": "^8.11.10",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.54.0"
