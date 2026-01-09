@@ -7,6 +7,11 @@ const LIBRARY_PATTERNS: Record<string, RegExp> = {
 	RBIB: /^(Canceled:\s*)?RBIB - (.+?) Seat (\d+)$/,
 	SBIB: /^(Canceled:\s*)?SBIB - (.*?) ?Seat (\d+)$/, // Room can be empty
 	EBIB: /^(Canceled:\s*)?EBIB - (.+?) +Seat (\d+)$/, // Double space before Seat
+	Agora: /^(Canceled:\s*)?Agora - (.+?) Seat (\d+)$/,
+	PBIB: /^(Canceled:\s*)?PBIB - (.*?) ?Seat (\d+)$/, // Room can be empty
+	Erasmushuis: /^(Canceled:\s*)?Erasmushuis (.+?) Seat (\d+)$/, // No dash separator
+	FBIB: /^(Canceled:\s*)?FBIB - (.+?) Seat (\d+)$/,
+	MSB: /^(Canceled:\s*)?MSB - (.+?) - Seat (\d+)$/, // Has " - " before Seat
 };
 
 interface PatternMatch {
