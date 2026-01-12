@@ -5,6 +5,8 @@ import { getUserById, upsertReservation, updateUserLastSynced } from "./db";
 import type { SyncResult } from "../types";
 
 const ALLOWED_ICS_HOST = "outlook.office365.com";
+const FETCH_TIMEOUT_MS = 10_000; // 10 seconds
+const MAX_ICS_SIZE_BYTES = 1_000_000; // 1 MB
 
 function calculateExpiresAt(endsAt: Date, keepHistory: boolean): Date {
 	if (keepHistory) {
@@ -45,16 +47,37 @@ export async function syncUserReservations(
 		return { synced: 0, errors: ["Invalid ICS URL format"] };
 	}
 
-	// Fetch ICS content
+	// Fetch ICS content with timeout and size limits
 	let icsContent: string;
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
 	try {
-		const response = await fetch(icsUrl);
+		const response = await fetch(icsUrl, { signal: controller.signal });
+		clearTimeout(timeoutId);
+
 		if (!response.ok) {
 			return { synced: 0, errors: [`ICS fetch failed: ${response.status}`] };
 		}
+
+		// Check Content-Length header if present
+		const contentLength = response.headers.get("content-length");
+		if (contentLength && parseInt(contentLength, 10) > MAX_ICS_SIZE_BYTES) {
+			return { synced: 0, errors: ["ICS file too large"] };
+		}
+
 		icsContent = await response.text();
+
+		// Also check actual content size (Content-Length can be missing or inaccurate)
+		if (icsContent.length > MAX_ICS_SIZE_BYTES) {
+			return { synced: 0, errors: ["ICS content too large"] };
+		}
 	} catch (e) {
-		return { synced: 0, errors: [`ICS fetch error: ${e}`] };
+		clearTimeout(timeoutId);
+		if (e instanceof Error && e.name === "AbortError") {
+			return { synced: 0, errors: ["ICS fetch timed out"] };
+		}
+		return { synced: 0, errors: ["ICS fetch failed"] };
 	}
 
 	console.log(`Fetched ICS content for user ${userId} (${icsContent.length} bytes)`);
@@ -77,8 +100,9 @@ export async function syncUserReservations(
 			await upsertReservation(client, userId, event, expiresAt);
 			synced++;
 		} catch (e) {
-			console.error(e);
-			errors.push(`Failed to upsert event ${event.uid}: ${e}`);
+			// Log full error for debugging, but return sanitized message
+			console.error(`Failed to upsert event ${event.uid}:`, e);
+			errors.push(`Failed to upsert event ${event.uid}`);
 		}
 	}
 

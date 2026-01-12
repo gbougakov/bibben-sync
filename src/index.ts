@@ -11,44 +11,9 @@ import { syncUserReservations } from "./lib/sync-service";
 import "./types"; // Import to extend Env interface
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const url = new URL(request.url);
-
-		// POST /encrypt
-		if (request.method === "POST" && url.pathname === "/encrypt") {
-			try {
-				const body = await request.json<{ icsUrl: string }>();
-				if (!body.icsUrl || typeof body.icsUrl !== "string") {
-					return Response.json({ error: "Missing icsUrl" }, { status: 400 });
-				}
-				const ciphertext = await encrypt(body.icsUrl, env.ENCRYPTION_KEY);
-				return Response.json({ ciphertext });
-			} catch {
-				return Response.json({ error: "Encryption failed" }, { status: 500 });
-			}
-		}
-
-		// POST /sync/:userId
-		const syncMatch = url.pathname.match(/^\/sync\/([a-zA-Z0-9_-]+)$/);
-		if (request.method === "POST" && syncMatch) {
-			const userId = syncMatch[1];
-			const client = createClient(env.HYPERDRIVE);
-
-			try {
-				await client.connect();
-				const result = await syncUserReservations(
-					client,
-					userId,
-					env.ENCRYPTION_KEY,
-				);
-				return Response.json(result);
-			} catch (e) {
-				return Response.json({ error: `Sync failed: ${e}` }, { status: 500 });
-			} finally {
-				await client.end();
-			}
-		}
-
+	// No HTTP endpoints exposed - sync is triggered via scheduled() and email()
+	// This prevents unauthenticated access to sync and encryption functionality
+	async fetch(_request, _env, _ctx): Promise<Response> {
 		return Response.json({ error: "Not found" }, { status: 404 });
 	},
 
