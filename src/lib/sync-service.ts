@@ -5,6 +5,7 @@ import { getUserById, upsertReservation, updateUserLastSynced } from "./db";
 import type { SyncResult } from "../types";
 
 const ALLOWED_ICS_HOST = "outlook.office365.com";
+const USER_AGENT = "BibbenSync/1.0 (+https://bibben.be/about; help@bibben.be)";
 
 function calculateExpiresAt(endsAt: Date, keepHistory: boolean): Date {
 	if (keepHistory) {
@@ -48,7 +49,9 @@ export async function syncUserReservations(
 	// Fetch ICS content
 	let icsContent: string;
 	try {
-		const response = await fetch(icsUrl);
+		const response = await fetch(icsUrl, {
+			headers: { "User-Agent": USER_AGENT },
+		});
 		if (!response.ok) {
 			return { synced: 0, errors: [`ICS fetch failed: ${response.status}`] };
 		}
