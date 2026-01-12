@@ -2,11 +2,12 @@ import type { ParsedEvent } from "../types";
 
 // Hardcoded library patterns (auditable allowlist)
 // Only events matching these patterns will be extracted
+// Note: Patterns use non-backtracking constructs where possible to prevent ReDoS
 const LIBRARY_PATTERNS: Record<string, RegExp> = {
 	CBA: /^(Canceled:\s*)?CBA - (.+?) Seat (\d+)$/,
 	RBIB: /^(Canceled:\s*)?RBIB - (.+?) Seat (\d+)$/,
 	SBIB: /^(Canceled:\s*)?SBIB - (.*?) ?Seat (\d+)$/, // Room can be empty
-	EBIB: /^(Canceled:\s*)?EBIB - (.+?) +Seat (\d+)$/, // Double space before Seat
+	EBIB: /^(Canceled:\s*)?EBIB - (\S.*?) +Seat (\d+)$/, // Room must start with non-space to prevent backtracking
 	Agora: /^(Canceled:\s*)?Agora - (.+?) Seat (\d+)$/,
 	PBIB: /^(Canceled:\s*)?PBIB - (.*?) ?Seat (\d+)$/, // Room can be empty
 	Erasmushuis: /^(Canceled:\s*)?Erasmushuis (.+?) Seat (\d+)$/, // No dash separator

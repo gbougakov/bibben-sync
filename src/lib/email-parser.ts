@@ -12,6 +12,12 @@ export interface EmailParseError {
 const ALLOWED_SENDER_DOMAIN = "student.kuleuven.be";
 const ALLOWED_ICS_HOST = "outlook.office365.com";
 
+// SECURITY NOTE: Email sender spoofing is mitigated by Cloudflare Email Routing.
+// As of June 2025, Cloudflare Email Routing checks SPF and DKIM authentication
+// and rejects emails that fail these checks BEFORE they reach this worker.
+// See: https://developers.cloudflare.com/changelog/2025-06-30-mail-authentication/
+// This means the From: header can be trusted for domain validation purposes.
+
 export async function parseCalendarSharingEmail(
 	rawEmail: ArrayBuffer,
 ): Promise<EmailParseResult | EmailParseError> {
