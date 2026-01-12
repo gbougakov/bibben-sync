@@ -49,12 +49,10 @@ export async function syncUserReservations(
 
 	// Fetch ICS content with timeout and size limits
 	let icsContent: string;
-	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
 	try {
-		const response = await fetch(icsUrl, { signal: controller.signal });
-		clearTimeout(timeoutId);
+		const response = await fetch(icsUrl, {
+			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+		});
 
 		if (!response.ok) {
 			return { synced: 0, errors: [`ICS fetch failed: ${response.status}`] };
@@ -73,8 +71,7 @@ export async function syncUserReservations(
 			return { synced: 0, errors: ["ICS content too large"] };
 		}
 	} catch (e) {
-		clearTimeout(timeoutId);
-		if (e instanceof Error && e.name === "AbortError") {
+		if (e instanceof Error && e.name === "TimeoutError") {
 			return { synced: 0, errors: ["ICS fetch timed out"] };
 		}
 		return { synced: 0, errors: ["ICS fetch failed"] };
