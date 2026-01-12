@@ -7,8 +7,12 @@ import {
 	deleteExpiredReservations,
 } from "./lib/db";
 import { parseCalendarSharingEmail } from "./lib/email-parser";
+import { RateLimiter } from "./lib/rate-limiter";
 import { syncUserReservations } from "./lib/sync-service";
 import "./types"; // Import to extend Env interface
+
+// Rate limit ICS fetches to avoid overwhelming Microsoft's servers
+const ICS_SYNC_RATE_LIMITER = new RateLimiter(2); // 2 requests per second
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
@@ -69,6 +73,9 @@ export default {
 
 				for (const user of users) {
 					try {
+						// Rate limit to avoid overwhelming Microsoft's servers
+						await ICS_SYNC_RATE_LIMITER.acquire();
+
 						const result = await syncUserReservations(
 							client,
 							user.id,
